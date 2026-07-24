@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:quiz_app/core/controllers/quiz_controller.dart';
 import 'package:quiz_app/features/Authentication/auth_bloc.dart';
+import 'package:quiz_app/features/Leaderboard/leaderboard.dart';
 
 import '../../core/controllers/quiz_controller.dart';
 part 'quiz_event.dart';
@@ -138,6 +139,10 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
         total: result['total'],
         breakdown: result['breakdown'],
       ));
+    });
+    on<LeaderBoardEvent> ((event,emit)async{
+      final result=await QuizController().leaderboard(event.id);
+
     });
   }
 }

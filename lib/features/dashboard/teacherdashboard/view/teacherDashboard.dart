@@ -100,7 +100,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               } else if (index == 1) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => LeaderBoard()),
+                  MaterialPageRoute(builder: (_) => LeaderBoard(id:"1")),
                 );
               }
             },
@@ -695,9 +695,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LeaderBoard(
-              // stats: teacherStats,
-              // quiz: quiz, // pass this too if needed
+            builder: (_) => LeaderBoard(id:quiz['quizId']
             ),
           ),
         );

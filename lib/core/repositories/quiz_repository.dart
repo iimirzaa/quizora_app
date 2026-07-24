@@ -36,4 +36,7 @@ class QuizRepository {
   Future<Map<String, dynamic>> teacherStats() async {
     return await QuizApiService().get("teacher-stats");
   }
+  Future<Map<String, dynamic>> leaderboard(String id) async {
+    return await QuizApiService().get("leaderboard");
+  }
 }

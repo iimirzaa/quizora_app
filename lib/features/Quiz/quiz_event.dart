@@ -61,4 +61,10 @@ class SubmitQuizEvent extends QuizEvent {
     required this.answers,
     required this.autoSubmit,
   });
+
+
+}
+class LeaderBoardEvent extends QuizEvent{
+  final String id;
+  LeaderBoardEvent({required this.id});
 }
