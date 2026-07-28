@@ -27,5 +27,5 @@ QuizRouter.post("/save-answer",    verifyToken, saveAnswer);
 QuizRouter.post("/submit-quiz",    verifyToken, submitQuiz);
 QuizRouter.get("/user-stats",    verifyToken, userStats);
 QuizRouter.get("/teacher-stats",verifyToken,teacherStats);
-QuizRouter.get("leaderboard",verifyToken,rateLimit,leaderboard)
+QuizRouter.get("/leaderboard",verifyToken,leaderboard);
 export default QuizRouter;

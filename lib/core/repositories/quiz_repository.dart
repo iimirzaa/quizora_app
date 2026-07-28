@@ -37,6 +37,6 @@ class QuizRepository {
     return await QuizApiService().get("teacher-stats");
   }
   Future<Map<String, dynamic>> leaderboard(String id) async {
-    return await QuizApiService().get("leaderboard");
+    return await QuizApiService().get("leaderboard",queryParameters: {"quizId":id});
   }
 }

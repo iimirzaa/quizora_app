@@ -574,7 +574,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
   Widget _buildRecentQuizzesCard() {
     final List quizzes = teacherStats['quizzes'] ?? [];
-    final recent = quizzes.take(3).toList();
+    final recent = quizzes.take(3).toList()??[];
 
     return Container(
       padding: EdgeInsets.all(16.r),

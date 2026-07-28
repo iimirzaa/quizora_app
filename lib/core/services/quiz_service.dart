@@ -93,9 +93,11 @@ class QuizApiService {
     }
   }
 
-  Future<Map<String, dynamic>> get(String endpoint) async {
+  Future<Map<String, dynamic>> get(String endpoint,{
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
-      final response = await dio.get(endpoint);
+      final response = await dio.get(endpoint,queryParameters: queryParameters);
       return response.data;
     } on DioException catch (e) {
       return _handleError(e);

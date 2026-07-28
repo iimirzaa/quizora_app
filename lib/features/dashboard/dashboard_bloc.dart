@@ -66,7 +66,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         emit(ErrorState(message: result['message'].toString()));
         return;
       }
-      print(result['data']);
+
       emit(TeacherStatsState(teacherStats: result['data']));
     });
 

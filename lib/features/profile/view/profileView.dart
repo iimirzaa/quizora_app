@@ -4,8 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:quiz_app/features/Authentication/login/view/LoginView.dart';
 import 'package:quiz_app/features/profile/profile_bloc.dart';
-import 'dart:async';
-import 'dart:math';
+
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
@@ -14,70 +13,38 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  late final Timer timer;
+  static const Color kPrimary = Color(0xFF6C4FD1);
+  static const Color kPrimaryTint = Color(0xFFEEEDFE);
+
+  static const double kBannerHeight = 150;
+  static const double kAvatarSize = 96;
+  static const double kAvatarOverlap = kAvatarSize / 2; // how much the avatar hangs below the banner
+
   bool notificationEnabled = true;
-  Color loaderColor = Colors.white;
-  Color getColor() {
-    final random = Random();
-    return Color.fromARGB(
-      255,
-      random.nextInt(256),
-      random.nextInt(256),
-      random.nextInt(256),
-    );
-  }
 
-  @override
-  void initState() {
-    super.initState();
-    timer = Timer.periodic(Duration(milliseconds: 500), (_) {
-      setState(() {
-        loaderColor = getColor();
-      });
-    });
-
-  }
-  @override
-  void dispose() {
-    timer.cancel(); // ← cancel on dispose
-    super.dispose();
-  }
-  // ── Logout Confirmation Dialog ─────────────────────────────────────────────
+  // ── Logout Confirmation Dialog ─────────────────────────────────────────
   Future<void> _showLogoutDialog() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierDismissible: true, // tap outside = cancel
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          "Logout",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
           "Are you sure you want to logout?",
           style: TextStyle(color: Colors.black54),
         ),
         actions: [
-          // Cancel
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
           ),
-
-          // Confirm logout
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text("Logout"),
           ),
@@ -85,24 +52,22 @@ class _ProfileViewState extends State<ProfileView> {
       ),
     );
 
-    // Only fire the event if user tapped "Logout"
     if (confirmed == true && mounted) {
       context.read<ProfileBloc>().add(LogoutButtonClicked());
     }
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
+  // ── Build ────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ProfileBloc, ProfileState>(
       listener: (context, state) {
         if (state is LogoutSuccessState) {
-
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const LoginView()),
-            (route) => false,
+                (route) => false,
           );
         }
       },
@@ -110,97 +75,63 @@ class _ProfileViewState extends State<ProfileView> {
         return Scaffold(
           backgroundColor: const Color(0xFFF6F6F6),
           body: SafeArea(
-
-            child:Stack(
+            child: Stack(
               children: [
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 18.w),
-                child: Column(
-                  children: [
-
-                    SizedBox(height: 40.h),
-
-                    buildProfileCard(),
-
-                    SizedBox(height: 10.h),
-
-                    Text(
-                      "Emma Watson - Student",
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      _buildHeader(),
+                      // Only the small gap between avatar bottom and name is
+                      // needed now — the header widget itself already
+                      // reserves space for the overlapping avatar.
+                      SizedBox(height: 12.h),
+                      Text(
+                        "Emma Watson",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 19.sp, fontWeight: FontWeight.w700),
                       ),
-                    ),
-
-                    Text(
-                      "abc@gmail.com",
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14.sp,
+                      SizedBox(height: 4.h),
+                      Text(
+                        "abc@gmail.com  ·  Student",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13.sp),
                       ),
-                    ),
-
-                    SizedBox(height: 20.h),
-
-                    buildSettingCard(),
-                    SizedBox(height: 10.h,),
-                    if (state is ErrorState)
-                      Container(
-
-                        padding: EdgeInsets.all(12.r),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFEAEA), // softer red
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(color: Colors.red.shade300),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
+                      SizedBox(height: 26.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 18.w),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 22.sp,
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: Text(
-                                state.msg,
-                                style: TextStyle(
-                                  color: Colors.red.shade800,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
+                            _sectionLabel("ACCOUNT"),
+                            SizedBox(height: 10.h),
+                            _buildAccountCard(),
+                            SizedBox(height: 22.h),
+                            _buildLogoutCard(),
+                            if (state is ErrorState) ...[
+                              SizedBox(height: 14.h),
+                              _buildErrorBanner(state.msg),
+                            ],
+                            SizedBox(height: 24.h),
                           ],
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-                if (state is LoadingState) // show loader when loading
+                if (state is LoadingState)
                   Container(
-                    color: Colors.black.withOpacity(
-                      0.5,
-                    ), // semi-transparent background
+                    color: Colors.black.withOpacity(0.45),
                     width: double.infinity,
                     height: double.infinity,
                     child: Center(
                       child: LoadingAnimationWidget.staggeredDotsWave(
-                        color: loaderColor,
-                        size: 70.sp,
+                        color: Colors.white,
+                        size: 60.sp,
                       ),
                     ),
                   ),
-      ]
+              ],
             ),
           ),
         );
@@ -208,134 +139,262 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
-  Widget buildProfileCard() {
-    return Stack(
-      children: [
-        CircleAvatar(
-          radius: 70.r,
-          backgroundColor: Colors.deepPurple,
-          child: Icon(
-            Icons.person,
-            size: 70.sp,
-            color: Colors.white,
-          ),
-        ),
-        Positioned(
-          bottom: 5,
-          right: 5,
-          child: GestureDetector(
-            onTap: () {
-              print("Edit profile picture");
-            },
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                color: Colors.deepPurple,
-                shape: BoxShape.circle,
+  // ── Header: colored banner + overlapping avatar ─────────────────────
+  //
+  // Previously the avatar was Positioned(bottom: -48) inside a Stack whose
+  // *size* was only the 130.h banner — Positioned children don't add to a
+  // Stack's size, so the avatar's bottom half hung outside the header and
+  // overlapped the name/email text below it. Wrapping the Stack in a
+  // SizedBox tall enough to fit "banner + half the avatar" fixes that: the
+  // Column below now starts after the avatar, not underneath it.
+
+  Widget _buildHeader() {
+    return SizedBox(
+      height: kBannerHeight.h + kAvatarOverlap.h,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          Container(
+            width: double.infinity,
+            height: kBannerHeight.h,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [kPrimary, kPrimary.withOpacity(0.85)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Icon(
-                Icons.edit,
-                color: Colors.white,
-                size: 18.sp,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(28.r),
+                bottomRight: Radius.circular(28.r),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Center(
+                child: Text(
+                  "PROFILE",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
               ),
             ),
           ),
-        )
-      ],
+          Positioned(
+            top: kBannerHeight.h - kAvatarOverlap.h,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: kAvatarSize.r,
+                  height: kAvatarSize.r,
+                  padding: EdgeInsets.all(4.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    backgroundColor: kPrimaryTint,
+                    child: Icon(Icons.person, size: 44.sp, color: kPrimary),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () => debugPrint("Edit profile picture"),
+                    child: Container(
+                      padding: EdgeInsets.all(6.r),
+                      decoration: BoxDecoration(
+                        color: kPrimary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Icon(Icons.camera_alt, color: Colors.white, size: 14.sp),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget buildSettingCard() {
+  Widget _sectionLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 11.sp,
+        color: Colors.grey.shade600,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.6,
+      ),
+    );
+  }
+
+  // ── Account settings card ────────────────────────────────────────────
+
+  Widget _buildAccountCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          )
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
         children: [
-
-          /// Notification switch
-          SwitchListTile(
-            secondary: const Icon(Icons.notifications, color: Color(0xFF764BA2)),
-            title: const Text("Notifications"),
-            value: notificationEnabled,
-            onChanged: (value) {
-              setState(() => notificationEnabled = value);
-            },
+          _settingRow(
+            icon: Icons.notifications_none,
+            title: "Notifications",
+            trailing: Switch(
+              value: notificationEnabled,
+              activeColor: kPrimary,
+              onChanged: (value) => setState(() => notificationEnabled = value),
+            ),
+            showChevron: false,
           ),
-
-          buildDivider(),
-
-          buildSettingItem(
-            icon: Icons.lock,
-            title: "Change Password",
-            onTap: () {
-              print("Change Password Clicked");
-            },
+          _divider(),
+          _settingRow(
+            icon: Icons.lock_outline,
+            title: "Change password",
+            onTap: () => debugPrint("Change Password Clicked"),
           ),
-
-          buildDivider(),
-
-          buildSettingItem(
+          _divider(),
+          _settingRow(
             icon: Icons.help_outline,
-            title: "Help & Support",
-            onTap: () {
-              print("Help Clicked");
-            },
-          ),
-
-          buildDivider(),
-
-          // Logout — red tint, opens confirmation dialog first
-          buildSettingItem(
-            icon: Icons.logout,
-            title: "Logout",
-            isLogout: true,
-            onTap: _showLogoutDialog, // dialog → then fires bloc event
+            title: "Help and support",
+            onTap: () => debugPrint("Help Clicked"),
           ),
         ],
       ),
     );
   }
 
-  Widget buildSettingItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isLogout = false,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isLogout ? Colors.red : const Color(0xFF764BA2),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            color: isLogout ? Colors.red : Colors.black,
+  Widget _buildLogoutCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        ],
+      ),
+      child: _settingRow(
+        icon: Icons.logout,
+        title: "Logout",
+        isDestructive: true,
+        onTap: _showLogoutDialog,
+        showChevron: false,
       ),
     );
   }
 
-  Widget buildDivider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(height: 1),
+  // iconContainer(34.r) + horizontal padding(14.w) + gap(12.w) = 60 —
+  // kept in sync with _divider()'s left inset so the divider lines up
+  // under the row title, not the icon.
+  Widget _settingRow({
+    required IconData icon,
+    required String title,
+    VoidCallback? onTap,
+    Widget? trailing,
+    bool isDestructive = false,
+    bool showChevron = true,
+  }) {
+    final Color iconColor = isDestructive ? Colors.redAccent : kPrimary;
+    final Color iconBg = isDestructive ? const Color(0xFFFCEBEB) : kPrimaryTint;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16.r),
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        child: Row(
+          children: [
+            Container(
+              width: 34.r,
+              height: 34.r,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10.r)),
+              child: Icon(icon, size: 18.sp, color: iconColor),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: isDestructive ? Colors.redAccent : Colors.black87,
+                ),
+              ),
+            ),
+            if (trailing != null)
+              trailing
+            else if (showChevron)
+              Icon(Icons.chevron_right, size: 18.sp, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() {
+    return Padding(
+      padding: EdgeInsets.only(left: 60.w),
+      child: Divider(height: 1, color: Colors.black.withOpacity(0.06)),
+    );
+  }
+
+  Widget _buildErrorBanner(String message) {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEAEA),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.red.shade300),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 22.sp),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.red.shade800,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
