@@ -140,9 +140,18 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
         breakdown: result['breakdown'],
       ));
     });
-    on<LeaderBoardEvent> ((event,emit)async{
-      final result=await QuizController().leaderboard(event.id);
+    on<LeaderBoardEvent>((event, emit) async {
+      emit(LoadingState());
+      final result = await QuizController().leaderboard(event.id);
 
+      if (result['response']['success'] == true) {
+        emit(LeaderBoardLoaded(
+          leaderboardData: result['response'] as Map<String, dynamic>,
+        ));
+        return;
+      }
+
+      emit(ErrorState(message: result['response']['message'] ?? 'Failed to load leaderboard'));
     });
   }
 }

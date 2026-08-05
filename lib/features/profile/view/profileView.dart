@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:quiz_app/core/widgets/custom_bottom_nav.dart';
 import 'package:quiz_app/features/Authentication/login/view/LoginView.dart';
+import 'package:quiz_app/features/Quiz/allquiz/quizess.dart';
 import 'package:quiz_app/features/profile/profile_bloc.dart';
 
 class ProfileView extends StatefulWidget {
@@ -13,6 +15,7 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
+  int _currentIndex = 2;
   static const Color kPrimary = Color(0xFF6C4FD1);
   static const Color kPrimaryTint = Color(0xFFEEEDFE);
 
@@ -72,6 +75,7 @@ class _ProfileViewState extends State<ProfileView> {
         }
       },
       builder: (context, state) {
+
         return Scaffold(
           backgroundColor: const Color(0xFFF6F6F6),
           body: SafeArea(

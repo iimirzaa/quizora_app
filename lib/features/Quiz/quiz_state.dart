@@ -66,3 +66,7 @@ class QuizErrorState extends QuizState {
   final bool isFatal; // fatal = block UI, non-fatal = silent retry
    QuizErrorState({required this.message, this.isFatal = false});
 }
+class LeaderBoardLoaded extends QuizState{
+  final Map<String, dynamic> leaderboardData;
+  LeaderBoardLoaded({required this.leaderboardData});
+}

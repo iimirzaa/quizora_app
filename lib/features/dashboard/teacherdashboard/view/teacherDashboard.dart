@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:quiz_app/core/widgets/custom_bottom_nav.dart';
 import 'package:quiz_app/features/Leaderboard/leaderboard.dart';
+import 'package:quiz_app/features/Quiz/allquiz/quizess.dart';
 import 'package:quiz_app/features/Quiz/create_quiz/createQuiz.dart';
 import 'package:quiz_app/features/dashboard/dashboard_bloc.dart';
 import 'package:quiz_app/features/profile/view/profileView.dart';
@@ -88,23 +89,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: const Color(0xfff4f6fb),
-          bottomNavigationBar: CustomBottomNav(
-            currentIndex: _currentIndex,
-            onTap: (index) {
-              setState(() => _currentIndex = index);
-              if (index == 2) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ProfileView()),
-                );
-              } else if (index == 1) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => LeaderBoard(id:"1")),
-                );
-              }
-            },
-          ),
+
           body: Stack(
             children: [
               SafeArea(
@@ -133,13 +118,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
                     SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
-                    // ── Top Performer ────────────────────
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 18.w),
-                        child: _buildTopPerformerCard(),
-                      ),
-                    ),
+                    // // ── Top Performer ────────────────────
+                    // SliverToBoxAdapter(
+                    //   child: Padding(
+                    //     padding: EdgeInsets.symmetric(horizontal: 18.w),
+                    //     child: _buildTopPerformerCard(),
+                    //   ),
+                    // ),
 
                     SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
@@ -219,6 +204,32 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               Icons.notifications_outlined,
               color: const Color(0xFF764ba2),
               size: 20.sp,
+            ),
+          ),
+          SizedBox(width: 10.w,),
+          GestureDetector(
+            onTap: (){
+              Navigator.push(context, MaterialPageRoute(builder: (_)=>ProfileView()));
+            },
+            child: Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.person_2_outlined,
+                color: const Color(0xFF764ba2),
+                size: 20.sp,
+              ),
             ),
           ),
         ],
@@ -310,29 +321,35 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   // ──────────────────────────────────────────────────────────
 
   Widget _buildStatsRow() {
+    // Helper to safely format null or missing values
+    String formatStat(dynamic value, {String suffix = ''}) {
+      if (value == null) return '0$suffix';
+      return '$value$suffix';
+    }
+
     final stats = [
       {
         'icon': Icons.quiz_outlined,
         'label': 'Quizzes',
-        'value': '${teacherStats['totalQuizzesCreated']}',
+        'value': formatStat(teacherStats['totalQuizzesCreated']),
         'color': const Color(0xFF667eea),
       },
       {
         'icon': Icons.people_outline,
         'label': 'Attempts',
-        'value': "${teacherStats['totalAttempts']}",
+        'value': formatStat(teacherStats['totalAttempts']),
         'color': const Color(0xFF764ba2),
       },
       {
         'icon': Icons.bar_chart_rounded,
         'label': 'Avg Score',
-        'value': '${teacherStats['avgScore']}%',
+        'value': formatStat(teacherStats['avgScore'], suffix: '%'),
         'color': const Color(0xFFf7971e),
       },
       {
         'icon': Icons.check_circle_outline,
         'label': 'Pass Rate',
-        'value': '${teacherStats['passRate']}%',
+        'value': formatStat(teacherStats['passRate'], suffix: '%'),
         'color': const Color(0xFF43b89c),
       },
     ];
@@ -346,16 +363,16 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             padding: EdgeInsets.only(right: isLast ? 0 : 8.w),
             child: _statsLoading
                 ? _ShimmerBox(
-                    width: double.infinity,
-                    height: 72.h,
-                    radius: 12.r,
-                  )
+              width: double.infinity,
+              height: 72.h,
+              radius: 12.r,
+            )
                 : _buildStatChip(
-                    icon: s['icon'] as IconData,
-                    label: s['label'] as String,
-                    value: s['value'] as String,
-                    color: s['color'] as Color,
-                  ),
+              icon: s['icon'] as IconData,
+              label: s['label'] as String,
+              value: s['value'] as String,
+              color: s['color'] as Color,
+            ),
           ),
         );
       }).toList(),
@@ -605,7 +622,9 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                 ),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_)=>AllQuiz(stats:quizzes)));
+                },
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 10.w,
@@ -684,8 +703,6 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     ];
 
     final color = accents[index % accents.length];
-
-    final int attempts = teacherStats['totalAttempts'] ?? 0;
     final String code = quiz['quizCode'] ?? '—';
     final String title = quiz['title'] ?? '';
 
@@ -695,7 +712,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LeaderBoard(id:quiz['quizId']
+            builder: (_) => LeaderBoard(id:quiz['quizId'],title:quiz['title']
             ),
           ),
         );
@@ -745,16 +762,11 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                     ),
                   ),
                   SizedBox(height: 6.h),
-                  Row(
-                    children: [
-                      _metaPill(Icons.tag_rounded, code, Colors.grey.shade500),
-                      SizedBox(width: 10.w),
-                      _metaPill(
-                        Icons.people_outline,
-                        "$attempts Attempts",
-                        color,
-                      ),
-                    ],
+                   Row(
+                  children: [
+                   _metaPill(Icons.tag_rounded, code, Colors.grey.shade500),
+                   SizedBox(width: 10.w),
+                   ],
                   ),
                   SizedBox(height: 8.h),
                   Text(

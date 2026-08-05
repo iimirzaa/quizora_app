@@ -151,13 +151,11 @@ class QuizController {
   }
   Future <Map<String,dynamic>> leaderboard(String id)async{
     try {
-      print("Request sent from controller "+ id);
+
       final response = await repository.leaderboard(id);
 
       return {
-        'success': response['success'],
-        'message': response['message'],
-        'data': response['data']
+        'response':response
 
       };
     } catch (e) {

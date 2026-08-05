@@ -4,68 +4,55 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:quiz_app/features/Quiz/quiz_bloc.dart';
 
-
 class LeaderBoard extends StatefulWidget {
   final String id;
-  const LeaderBoard({super.key,required this.id});
+  final String? title;
+  const LeaderBoard({super.key, required this.id, this.title});
 
   @override
   State<LeaderBoard> createState() => _LeaderBoardState();
 }
 
 class _LeaderBoardState extends State<LeaderBoard> {
-  final List<Map<String, dynamic>> leaderboard = [
-    {
-      "name": "Ali Ahmed",
-      "score": 19,
-      "total": 20,
-      "percentage": 95,
-    },
-    {
-      "name": "Hamza",
-      "score": 18,
-      "total": 20,
-      "percentage": 90,
-    },
-    {
-      "name": "Sara",
-      "score": 17,
-      "total": 20,
-      "percentage": 85,
-    },
-    {
-      "name": "Ahmad",
-      "score": 16,
-      "total": 20,
-      "percentage": 80,
-    },
-    {
-      "name": "Bilal",
-      "score": 15,
-      "total": 20,
-      "percentage": 75,
-    },
-  ];
-  @override
-  void initState(){
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_){
-      context.read<QuizBloc>().add(LeaderBoardEvent(id:widget.id));
-    });
+  Map<String, dynamic> leaderboardData = {};
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<QuizBloc>().add(LeaderBoardEvent(id: widget.id));
+    });
   }
+
   @override
   Widget build(BuildContext context) {
-
-    return BlocConsumer<QuizBloc,QuizState>(
-      listener: (context,state){
-
+    return BlocConsumer<QuizBloc, QuizState>(
+      listener: (context, state) {
+        if (state is LeaderBoardLoaded) {
+          setState(() {
+            leaderboardData = state.leaderboardData;
+          });
+        }
       },
-      builder: (context,state) {
+      builder: (context, state) {
+        final isLoading = state is! LeaderBoardLoaded;
+
+        final List<dynamic> students =
+            (leaderboardData['leaderboard'] as List<dynamic>?) ?? [];
+        final totalAttempts = leaderboardData['totalAttempts'] ?? 0;
+        final averageScore = leaderboardData['averageScore'] ?? 0;
+        final highestScore = leaderboardData['highestScore'] ?? 0;
+
+        // sort by percentage descending so rank order (index 0 = 1st place) is correct
+        final sortedStudents = [...students]
+          ..sort((a, b) =>
+              (b['percentage'] as num).compareTo(a['percentage'] as num));
+
         return Scaffold(
           backgroundColor: const Color(0xffF6F8FC),
           appBar: AppBar(
-            backgroundColor: Color(0xFF667eea),
+            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFF667eea),
             elevation: 0,
             centerTitle: true,
             title: Text(
@@ -96,7 +83,9 @@ class _LeaderBoardState extends State<LeaderBoard> {
                     ),
                     SizedBox(height: 10.h),
                     Text(
-                      "Flutter Basics Quiz",
+                      leaderboardData['quizTitle']?.toString() ??
+                          widget.title ??
+                          '',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 22.sp,
@@ -104,12 +93,6 @@ class _LeaderBoardState extends State<LeaderBoard> {
                       ),
                     ),
                     SizedBox(height: 6.h),
-                    Text(
-                      "45 Attempts",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white70,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -118,21 +101,51 @@ class _LeaderBoardState extends State<LeaderBoard> {
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Row(
                   children: [
-                    Expanded(child: statCard("Attempts", "45")),
+                    Expanded(
+                      child: isLoading
+                          ? statCardShimmer()
+                          : statCard("Attempts", "$totalAttempts"),
+                    ),
                     SizedBox(width: 10.w),
-                    Expanded(child: statCard("Average", "78%")),
+                    Expanded(
+                      child: isLoading
+                          ? statCardShimmer()
+                          : statCard("Average", "$averageScore%"),
+                    ),
                     SizedBox(width: 10.w),
-                    Expanded(child: statCard("Highest", "95%")),
+                    Expanded(
+                      child: isLoading
+                          ? statCardShimmer()
+                          : statCard("Highest", "$highestScore%"),
+                    ),
                   ],
                 ),
               ),
               SizedBox(height: 20.h),
               Expanded(
-                child: ListView.builder(
+                child: isLoading
+                    ? ListView.builder(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  itemCount: leaderboard.length,
+                  itemCount: 6,
+                  itemBuilder: (context, index) =>
+                      leaderboardCardShimmer(),
+                )
+                    : sortedStudents.isEmpty
+                    ? Center(
+                  child: Text(
+                    "No attempts yet",
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey,
+                      fontSize: 15.sp,
+                    ),
+                  ),
+                )
+                    : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  itemCount: sortedStudents.length,
                   itemBuilder: (context, index) {
-                    final student = leaderboard[index];
+                    final student = sortedStudents[index]
+                    as Map<String, dynamic>;
 
                     return Card(
                       elevation: 3,
@@ -160,7 +173,8 @@ class _LeaderBoardState extends State<LeaderBoard> {
                           ),
                         ),
                         title: Text(
-                          student["name"],
+                          student["studentName"]?.toString() ??
+                              "Unknown",
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 15.sp,
@@ -200,9 +214,7 @@ class _LeaderBoardState extends State<LeaderBoard> {
         );
       },
     );
-
   }
-
 
   Widget statCard(String title, String value) {
     return Container(
@@ -233,4 +245,113 @@ class _LeaderBoardState extends State<LeaderBoard> {
     );
   }
 
+  Widget statCardShimmer() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 18.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          _ShimmerBox(width: 40.w, height: 20.h, radius: 6),
+          SizedBox(height: 8.h),
+          _ShimmerBox(width: 55.w, height: 12.h, radius: 4),
+        ],
+      ),
+    );
+  }
+
+  Widget leaderboardCardShimmer() {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.only(bottom: 12.h),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(14.w),
+        child: Row(
+          children: [
+            _ShimmerBox(width: 44.r, height: 44.r, radius: 22),
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ShimmerBox(width: 110.w, height: 14.h, radius: 4),
+                  SizedBox(height: 8.h),
+                  _ShimmerBox(width: 80.w, height: 12.h, radius: 4),
+                ],
+              ),
+            ),
+            _ShimmerBox(width: 48.w, height: 26.h, radius: 30),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShimmerBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final double radius;
+
+  const _ShimmerBox({
+    required this.width,
+    required this.height,
+    required this.radius,
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+    _animation = Tween<double>(
+      begin: -1.5,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (_, __) => Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.radius),
+          gradient: LinearGradient(
+            begin: Alignment(_animation.value - 1, 0),
+            end: Alignment(_animation.value, 0),
+            colors: const [
+              Color(0xFFE0E0E0),
+              Color(0xFFF5F5F5),
+              Color(0xFFE0E0E0),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

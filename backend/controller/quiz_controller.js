@@ -126,12 +126,12 @@ export const publishQuiz = async (req, res) => {
     if (!teacherStatsDoc.exists) {
       await teacherStatsRef.set({
         totalQuizzesCreated: 1,
-        quizzes: [{ quizId: quizRef.id, title, createdAt: new Date() }],
+        quizzes: [{ quizId: quizRef.id, title, createdAt: new Date() ,quizCode,attemptCount}],
       });
     } else {
       await teacherStatsRef.update({
         totalQuizzesCreated: FieldValue.increment(1),
-        quizzes: FieldValue.arrayUnion({ quizId: quizRef.id, title, createdAt: new Date(), }),
+        quizzes: FieldValue.arrayUnion({ quizId: quizRef.id, title, createdAt: new Date(), quizCode,attemptCount}),
       });
     }
     // initialize stats
@@ -451,13 +451,14 @@ export const submitQuiz = async (req, res) => {
       const teacherStatsRef = db.collection("teacherStats").doc(teacherId);
 
       // 1. READ EVERYTHING FIRST
-      const [statsSnap, userStatsSnap, teacherStatsSnap, studentMarkerSnap, leaderboardSnap] =
+      const [statsSnap, userStatsSnap, teacherStatsSnap, studentMarkerSnap, leaderboardSnap,quizSnap] =
         await Promise.all([
           t.get(statsRef),
           t.get(userStatsRef),
           t.get(teacherStatsRef),
           t.get(studentMarkerRef),
           t.get(leaderboardRef),
+          t.get(quizRef)
         ]);
 
       const isNewStudent = !studentMarkerSnap.exists;
@@ -719,7 +720,7 @@ export const leaderboard = async (req, res) => {
     const entries = await Promise.all(
       entriesSnap.docs.map(async (doc) => {
         const data = doc.data();
-        const userDoc = await db.collection("users").doc(data.userId).get();
+        const userDoc = await db.collection("students").doc(data.userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
  
         return {
@@ -732,7 +733,8 @@ export const leaderboard = async (req, res) => {
           submittedAt: data.submittedAt,
         };
       })
-    );
+    ); 
+    console.log(entries,quizId,stats.totalAttempts,stats.highestScore);
  
     return res.status(200).json({
       success: true,

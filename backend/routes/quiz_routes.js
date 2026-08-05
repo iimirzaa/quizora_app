@@ -9,7 +9,7 @@ import {
   submitQuiz,
   userStats,
   teacherStats,
-  leaderboard
+  leaderboard,
 } from "../controller/quiz_controller.js";
 import { generateMcqLimiter } from "../middleware/ratelimiter.js";
 import { verifyToken } from "../middleware/auth.js";
@@ -28,4 +28,5 @@ QuizRouter.post("/submit-quiz",    verifyToken, submitQuiz);
 QuizRouter.get("/user-stats",    verifyToken, userStats);
 QuizRouter.get("/teacher-stats",verifyToken,teacherStats);
 QuizRouter.get("/leaderboard",verifyToken,leaderboard);
+
 export default QuizRouter;
