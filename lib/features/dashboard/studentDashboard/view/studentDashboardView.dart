@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:quiz_app/core/services/token_service.dart';
 import 'package:quiz_app/core/widgets/CustomInput.dart';
 import 'package:quiz_app/core/widgets/customContainer.dart';
 import 'dart:math';
@@ -13,6 +14,7 @@ import 'package:quiz_app/features/dashboard/dashboard_bloc.dart';
 import 'package:quiz_app/features/profile/view/profileView.dart';
 import 'package:quiz_app/features/studentResultDetail/view/studentResultDetail.dart';
 import 'dart:async';
+import "package:jwt_decoder/jwt_decoder.dart";
 
 class StudentDashboardView extends StatefulWidget {
   const StudentDashboardView({super.key});
@@ -22,6 +24,15 @@ class StudentDashboardView extends StatefulWidget {
 }
 
 class _StudentDashboardViewState extends State<StudentDashboardView> {
+  String ?name;
+   String? email;
+   String? role;
+  Future <Map<String,dynamic>> getToken()async{
+    final decodedtoken=await TokenService.getAccessToken()??"";
+    final token=JwtDecoder.decode(decodedtoken);
+
+    return token;
+  }
   final TextEditingController _searchController = TextEditingController();
   late final Timer timer;
   Color loaderColor = Colors.white;
@@ -43,16 +54,35 @@ class _StudentDashboardViewState extends State<StudentDashboardView> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      setState(() => loaderColor = getColor());
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardBloc>().add(UserStatsEvent());
-    });
-  }
+void initState() {
+  super.initState();
 
+  _loadUser();
+
+  timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+    if (mounted) {
+      setState(() => loaderColor = getColor());
+    }
+  });
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    context.read<DashboardBloc>().add(UserStatsEvent());
+  });
+}
+
+Future<void> _loadUser() async {
+  final token = await getToken();
+  print(token);
+
+  if (!mounted) return;
+
+  setState(() {
+    name = token['name'];
+    email = token['email'];
+    role = token['role'];
+    print(name);
+  });
+}
   @override
   void dispose() {
     timer.cancel();
@@ -99,7 +129,7 @@ class _StudentDashboardViewState extends State<StudentDashboardView> {
             onTap: (index) {
               setState(() => _currentIndex = index);
               if (index == 1) Navigator.push(context, MaterialPageRoute(builder: (_) => AllResultView()));
-              if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileView()));
+              if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileView(name: name,email: email,role: role,)));
             },
           ),
           body: Stack(

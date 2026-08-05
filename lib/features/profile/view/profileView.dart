@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:quiz_app/core/widgets/custom_bottom_nav.dart';
+import 'package:quiz_app/core/services/token_service.dart';
 import 'package:quiz_app/features/Authentication/login/view/LoginView.dart';
-import 'package:quiz_app/features/Quiz/allquiz/quizess.dart';
 import 'package:quiz_app/features/profile/profile_bloc.dart';
 
 class ProfileView extends StatefulWidget {
-  const ProfileView({super.key});
+  final String? name;
+  final String? email;
+  final String? role;
+  const ProfileView({super.key,this.name,this.email,this.role});
 
   @override
   State<ProfileView> createState() => _ProfileViewState();
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  int _currentIndex = 2;
+  
   static const Color kPrimary = Color(0xFF6C4FD1);
   static const Color kPrimaryTint = Color(0xFFEEEDFE);
 
@@ -91,15 +93,15 @@ class _ProfileViewState extends State<ProfileView> {
                       // reserves space for the overlapping avatar.
                       SizedBox(height: 12.h),
                       Text(
-                        "Emma Watson",
+                        widget.name??'',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 19.sp, fontWeight: FontWeight.w700),
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        "abc@gmail.com  ·  Student",
+                        '${widget.email ?? ''}    ${widget.role ?? ''}',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13.sp),
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 15.sp),
                       ),
                       SizedBox(height: 26.h),
                       Padding(
@@ -180,9 +182,9 @@ class _ProfileViewState extends State<ProfileView> {
                   "PROFILE",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.75),
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
                   ),
                 ),

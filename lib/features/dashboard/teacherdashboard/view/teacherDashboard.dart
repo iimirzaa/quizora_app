@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:quiz_app/core/widgets/custom_bottom_nav.dart';
+import 'package:quiz_app/core/services/token_service.dart';
 import 'package:quiz_app/features/Leaderboard/leaderboard.dart';
 import 'package:quiz_app/features/Quiz/allquiz/quizess.dart';
 import 'package:quiz_app/features/Quiz/create_quiz/createQuiz.dart';
@@ -10,6 +10,7 @@ import 'package:quiz_app/features/dashboard/dashboard_bloc.dart';
 import 'package:quiz_app/features/profile/view/profileView.dart';
 import 'dart:async';
 import 'dart:math';
+import "package:jwt_decoder/jwt_decoder.dart";
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -19,7 +20,16 @@ class TeacherDashboard extends StatefulWidget {
 }
 
 class _TeacherDashboardState extends State<TeacherDashboard> {
-  int _currentIndex = 0;
+   String ? name;
+   String? email;
+   String? role;
+  Future <Map<String,dynamic>> getToken()async{
+    final decodedtoken=await TokenService.getAccessToken()??"";
+    final token=JwtDecoder.decode(decodedtoken);
+
+    return token;
+  }
+  
 
   // ─── Teacher Stats ────────────────────────────────────────
   bool _statsLoading = true;
@@ -42,6 +52,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   @override
   void initState() {
     super.initState();
+    _loadUser();
     _colorTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       setState(() => _loaderColor = _randomColor());
     });
@@ -49,6 +60,19 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       context.read<DashboardBloc>().add(TeacherStatsEvent());
     });
   }
+  Future<void> _loadUser() async {
+  final token = await getToken();
+  print(token);
+
+  if (!mounted) return;
+
+  setState(() {
+    name = token['name'];
+    email = token['email'];
+    role = token['role'];
+  });
+}
+
 
   @override
   void dispose() {
@@ -96,7 +120,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                 child: CustomScrollView(
                   slivers: [
                     // ── Header ──────────────────────────
-                    SliverToBoxAdapter(child: _buildHeader()),
+                    SliverToBoxAdapter(child: _buildHeader(name??'')),
 
                     // ── Create Quiz Card ─────────────────
                     SliverToBoxAdapter(
@@ -163,7 +187,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   //  HEADER
   // ──────────────────────────────────────────────────────────
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String name) {
     return Padding(
       padding: EdgeInsets.fromLTRB(18.w, 16.h, 18.w, 12.h),
       child: Row(
@@ -175,7 +199,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               children: [
                 SizedBox(height: 2.h),
                 Text(
-                  "Mrs. Johnson",
+                  name,
                   style: GoogleFonts.albertSans(
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF764ba2),
@@ -209,7 +233,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           SizedBox(width: 10.w,),
           GestureDetector(
             onTap: (){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>ProfileView()));
+              Navigator.push(context, MaterialPageRoute(builder: (_)=>ProfileView(name: name,email: email,role: role,)));
             },
             child: Container(
               width: 40.w,

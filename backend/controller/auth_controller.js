@@ -52,7 +52,8 @@ export const login = async (req, res) => {
 
         // 6. Generate tokens with role in payload
         const payload = {
-            id: userDoc.id,        // ✅ from doc reference not userData
+            id: userDoc.id,
+            name:userData.name,       // ✅ from doc reference not userData
             email: userData.email,
             role,                     // ✅ role included
         };
