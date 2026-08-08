@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import Groq from "groq-sdk";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { auth, db, FieldValue } from "../firebase/firebase_admin.js";
+import { json } from "stream/consumers";
+
 
 export const generateMcq = async (req, res) => {
   if (!req.file) {
@@ -126,12 +128,12 @@ export const publishQuiz = async (req, res) => {
     if (!teacherStatsDoc.exists) {
       await teacherStatsRef.set({
         totalQuizzesCreated: 1,
-        quizzes: [{ quizId: quizRef.id, title, createdAt: new Date() ,quizCode,attemptCount}],
+        quizzes: [{ quizId: quizRef.id, title, createdAt: new Date(), quizCode, attemptCount }],
       });
     } else {
       await teacherStatsRef.update({
         totalQuizzesCreated: FieldValue.increment(1),
-        quizzes: FieldValue.arrayUnion({ quizId: quizRef.id, title, createdAt: new Date(), quizCode,attemptCount}),
+        quizzes: FieldValue.arrayUnion({ quizId: quizRef.id, title, createdAt: new Date(), quizCode, attemptCount }),
       });
     }
     // initialize stats
@@ -451,7 +453,7 @@ export const submitQuiz = async (req, res) => {
       const teacherStatsRef = db.collection("teacherStats").doc(teacherId);
 
       // 1. READ EVERYTHING FIRST
-      const [statsSnap, userStatsSnap, teacherStatsSnap, studentMarkerSnap, leaderboardSnap,quizSnap] =
+      const [statsSnap, userStatsSnap, teacherStatsSnap, studentMarkerSnap, leaderboardSnap, quizSnap] =
         await Promise.all([
           t.get(statsRef),
           t.get(userStatsRef),
@@ -602,10 +604,25 @@ export const submitQuiz = async (req, res) => {
       return { score, total: totalQuestions, percentage, breakdown, attemptNumber };
     });
 
-    // stamp the attempt with its attempt number now that the transaction has resolved it
+  
     await attemptRef.update({ attemptNumber: responsePayload.attemptNumber });
+    res.status(200).json({ success: true, ...responsePayload });
+    const studentSnap = await db.collection('students').doc(userId).get();
 
-    return res.status(200).json({ success: true, ...responsePayload });
+    if (studentSnap.exists) {          
+      const userDoc = studentSnap;     
+      const userEmail = userDoc.data().email;
+      const name=userDoc.data().name;
+      console.log(userEmail);
+      console.log("Sending request");
+      triggerQuizSummary(name,userEmail,responsePayload).catch(err => {
+      console.error('n8n webhook failed:', err.message);
+    });
+    console.log("Sent request");
+    } else {
+      console.log('No student found with this ID');
+    }
+
   } catch (err) {
     console.error("Submit quiz error:", err);
     return res.status(500).json({ success: false, message: err.message });
@@ -691,9 +708,9 @@ export const leaderboard = async (req, res) => {
     if (!quizId) {
       return res.status(400).json({ success: false, message: "quizId is required" });
     }
- 
+
     const quizRef = db.collection("quizzess").doc(quizId);
- 
+
     const [quizSnap, statsSnap, entriesSnap] = await Promise.all([
       quizRef.get(),
       quizRef.collection("stats").doc("summary").get(),
@@ -705,24 +722,24 @@ export const leaderboard = async (req, res) => {
         .limit(5)
         .get(),
     ]);
- 
+
     if (!quizSnap.exists) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
     }
- 
+
     const stats = statsSnap.data() || {
       totalAttempts: 0,
       averageScore: 0,
       highestScore: 0,
     };
- 
+
     // fetch each entry's student name in parallel
     const entries = await Promise.all(
       entriesSnap.docs.map(async (doc) => {
         const data = doc.data();
         const userDoc = await db.collection("students").doc(data.userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
- 
+
         return {
           studentId: data.userId,
           studentName: userData?.name ?? "Unknown Student",
@@ -733,9 +750,9 @@ export const leaderboard = async (req, res) => {
           submittedAt: data.submittedAt,
         };
       })
-    ); 
-    console.log(entries,quizId,stats.totalAttempts,stats.highestScore);
- 
+    );
+    console.log(entries, quizId, stats.totalAttempts, stats.highestScore);
+
     return res.status(200).json({
       success: true,
       quizId,
@@ -751,5 +768,39 @@ export const leaderboard = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid or expired token" });
     }
     return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+const triggerQuizSummary = async (name,email, payload) => {
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(process.env.WEB_HOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-webhook-secret": process.env.WEB_HOOK_HEADER,
+      },
+      body: JSON.stringify({
+        email,
+        payload,
+        name,
+      }),
+      signal: controller.signal,
+    });
+
+    console.log("Status:", response.status);
+
+    const text = await response.text();
+    console.log("Response:", text);
+
+    return response;
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
 };

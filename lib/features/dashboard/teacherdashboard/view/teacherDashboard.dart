@@ -85,9 +85,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     return Color.fromARGB(255, r.nextInt(256), r.nextInt(256), r.nextInt(256));
   }
 
-  // ──────────────────────────────────────────────────────────
-  //  BUILD
-  // ──────────────────────────────────────────────────────────
+
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +104,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           setState(() => _statsLoading = false);
           showDialog(
             context: context,
-            builder: (_) => _buildErrorDialog(state.message),
+            builder: (_) => _buildErrorDialog(state.message), 
           );
         }
       },
@@ -152,7 +150,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
                     SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
-                    // ── Recent Quizzes ───────────────────
+          
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 18.w),
